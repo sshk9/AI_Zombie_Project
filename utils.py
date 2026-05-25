@@ -152,7 +152,7 @@ def get_astar_path(start, goal, grid=None, return_info=False):
     # A* with parent pointers. Heap stores (f_score, counter, node)
     open_heap = []
     g_score = {start_t: 0}
-    h0 = abs(start_t[0] - goal_t[0]) + abs(start_t[1] - goal_t[1])
+    h0 = get_manhattan_distance(start_t, goal_t)
     heapq.heappush(open_heap, (h0, counter, start_t))
 
     came_from = {}
@@ -193,7 +193,7 @@ def get_astar_path(start, goal, grid=None, return_info=False):
                     continue
                 g_score[neighbor] = tentative_g
                 came_from[neighbor] = current
-                h = abs(nx - goal_t[0]) + abs(ny - goal_t[1])
+                h = get_get_get_manhattan_distance(neighbor, goal_t)
                 f_neighbor = tentative_g + h
                 counter += 1
                 heapq.heappush(open_heap, (f_neighbor, counter, neighbor))
@@ -236,7 +236,7 @@ def get_astar_path_fast(start, goal, grid=None, return_info=False):
 
     g_score[start_idx] = 0
 
-    h0 = abs(sx - gx) + abs(sy - gy)
+    h0 = get_manhattan_distance(start, goal)
     open_heap = []
     counter = 0
     heapq.heappush(open_heap, (h0, counter, start_idx))
@@ -283,7 +283,7 @@ def get_astar_path_fast(start, goal, grid=None, return_info=False):
                     continue
                 g_score[neighbor_idx] = tentative_g
                 came_from[neighbor_idx] = current
-                h = abs(nx - gx) + abs(ny - gy)
+                h = get_manhattan_distance((nx, ny), goal)
                 f_neighbor = tentative_g + h
                 counter += 1
                 heapq.heappush(open_heap, (f_neighbor, counter, neighbor_idx))
@@ -298,22 +298,26 @@ def get_astar_path_fast(start, goal, grid=None, return_info=False):
     return []
 
 
-def get_minimax_path(start, goal, grid=None, return_info=False, depth=10, is_maximizing=True):
+def get_bounded_astar(start, goal, grid=None, return_info=False, depth=10):
     """
-    Finds a path using depth-bounded A* (minimax-inspired bounded search).
-    Uses A* heuristic but limits search depth to simulate minimax pruning.
-    More suitable for pathfinding than true game-tree minimax.
+    Finds the shortest path from start to goal using depth-bounded A*.
+    Uses Manhattan distance as the heuristic. Stops expanding nodes whose
+    path-cost from start has reached `depth`; returns an empty path if the
+    goal is not reachable within `depth` steps.
+
+    Intended for game agents that re-plan every tick and want a bounded
+    per-call cost instead of a full A* search.
 
     Args:
         start: [x, y] starting position
         goal: [x, y] goal position
         grid: Grid to use (defaults to GRID if not provided)
         return_info: if True return (path, info_dict) where info_dict contains stats
-        depth: Maximum depth for search (limits exploration)
-        is_maximizing: Unused (kept for API compatibility)
+        depth: Maximum path length to explore from start (default 10)
 
     Returns:
         List of tuples representing the path from start to goal.
+        Empty list if no path of length <= depth exists.
         If return_info is True, returns (path, info_dict).
     """
     if grid is None:
@@ -324,10 +328,6 @@ def get_minimax_path(start, goal, grid=None, return_info=False, depth=10, is_max
 
     start_t = tuple(start)
     goal_t = tuple(goal)
-    
-    def manhattan_distance(pos1, pos2):
-        """Calculate Manhattan distance between two positions"""
-        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
     # Use A* with depth limit
     from heapq import heappush, heappop
@@ -335,7 +335,7 @@ def get_minimax_path(start, goal, grid=None, return_info=False, depth=10, is_max
     counter = 0
     open_heap = []
     g_score = {start_t: 0}
-    h0 = manhattan_distance(start_t, goal_t)
+    h0 = get_manhattan_distance(start_t, goal_t)
     heappush(open_heap, (h0, counter, start_t, 0))  # (f_score, counter, node, g_score)
     
     came_from = {}
@@ -385,7 +385,7 @@ def get_minimax_path(start, goal, grid=None, return_info=False, depth=10, is_max
                     
                 g_score[neighbor] = tentative_g
                 came_from[neighbor] = current
-                h = manhattan_distance(neighbor, goal_t)
+                h = get_manhattan_distance(neighbor, goal_t)
                 f_neighbor = tentative_g + h
                 counter += 1
                 heappush(open_heap, (f_neighbor, counter, neighbor, tentative_g))

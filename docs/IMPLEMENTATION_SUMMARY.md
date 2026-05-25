@@ -1,107 +1,93 @@
-# Implementation Summary: Advanced Pathfinding Visualizations
+# Implementation Summary
 
-## Session Overview
+**Last updated: 2026-05-25**
 
-Successfully implemented **4 academic visualization methods** + **metrics overlay** across **3 phases** (10×10, 30×30, 50×40 grids) to demonstrate BFS vs A* pathfinding algorithms.
+Implementation notes for the AI Zombie Project: pathfinding visualizations across three grid scales (`grid1`, `grid2`, `grid3`) and a multi-agent Freeze Tag pursuit game.
+
+For high-level architecture and file layout see `PROJECT_SUMMARY.md`. This document focuses on **how** features were built.
 
 ---
 
-## What Was Implemented
+## Part 1 — Single-Agent Pathfinding Visualizations
 
-### ✅ 1. Search Footprint (Static Plots with Metrics)
+Three grid scales (small / medium / large), three visualization methods per scale, plus a metrics overlay that applies to all.
 
-**Files Modified:**
-- `phase1_search.py` — Added matplotlib footprint generation
-- `phase1_astar.py` — Added matplotlib footprint generation
-- `phase2_search.py` — Added matplotlib footprint generation
-- `phase2_astar.py` — Added matplotlib footprint generation
-- `phase3_search.py` — Added matplotlib footprint generation
-- `phase3_astar.py` — Added matplotlib footprint generation
+### 1. Search Footprint (Static PNG + Metrics)
 
-**Implementation Details:**
-```python
-# Each phase*_*.py now:
-1. Calls get_bfs_path(..., return_info=True) to capture explored nodes
-2. Builds numpy array visualization with colors:
-   - Light Blue (BFS) / Light Green (A*): Explored nodes
-   - Bright Yellow: Final shortest path
-   - Green square: Start; Red square: Goal
-3. Creates 2-panel matplotlib figure:
-   - Left: Grid visualization with colors
-   - Right: Metrics scorecard (path length, nodes explored, time, efficiency %)
-4. Saves PNG: phase{N}_{bfs|astar}_footprint.png
+**Files:**
+- `grid1/grid1_search.py`, `grid1/grid1_astar.py`
+- `grid2/grid2_search.py`, `grid2/grid2_astar.py`
+- `grid3/grid3_search.py`, `grid3/grid3_astar.py`
+
+**Per file:**
+```
+1. Call get_bfs_path(..., return_info=True) or get_astar_path(..., return_info=True)
+2. Build numpy array visualization:
+   - Light Blue (BFS) / Light Green (A*): explored nodes
+   - Bright Yellow: final shortest path
+   - Green square: start
+   - Red square: goal
+3. Create 2-panel matplotlib figure:
+   - Left: grid visualization
+   - Right: metrics scorecard (path length, nodes explored, time, efficiency %)
+4. Save PNG: grid{N}_{bfs|astar}_footprint.png
 ```
 
-**Output:** 6 PNG files + console metrics for all algorithms across all phases
+**Output:** 6 PNG files (2 per grid scale) + console metrics.
 
 ---
 
-### ✅ 2. Discovery Time Heatmaps
+### 2. Discovery Time Heatmaps
 
-**Files Created:**
-- `phase1_heatmaps.py` (NEW)
-- `phase2_heatmaps.py` (NEW)
-- `phase3_heatmaps.py` (NEW)
+**Files:** `grid1/grid1_heatmaps.py`, `grid2/grid2_heatmaps.py`, `grid3/grid3_heatmaps.py`
 
-**Implementation Details:**
-```python
-# Each heatmap script:
-1. Runs both BFS and A* with return_info=True
-2. Extracts visited sets from both algorithms
-3. Creates Viridis color gradient:
-   - Dark colors: Nodes discovered early
-   - Bright colors: Nodes discovered late
+**Per file:**
+```
+1. Run both BFS and A* with return_info=True
+2. Extract visited sets from both
+3. Render Viridis color gradient:
+   - Dark: discovered early
+   - Bright: discovered late
 4. Side-by-side comparison:
-   - Left: BFS (shows concentric circles = radial expansion)
-   - Right: A* (shows focused beam = goal-directed)
-5. Saves PNG with colorbars: phase{N}_discovery_heatmap.png
+   - Left: BFS (concentric rings = radial expansion)
+   - Right: A* (focused beam = goal-directed)
+5. Save PNG with colorbars: grid{N}_discovery_heatmap.png
 ```
 
-**Key Insight:** Visually demonstrates the **mathematical difference**:
-- BFS explores with $f(n) = g(n)$ (no heuristic guidance)
-- A* explores with $f(n) = g(n) + h(n)$ (guided by heuristic)
+**Key insight (visually demonstrated):**
+- BFS expands with `f(n) = g(n)` — no heuristic guidance
+- A* expands with `f(n) = g(n) + h(n)` — biased toward the goal
 
-**Output:** 3 PNG heatmaps
+**Output:** 3 PNG heatmaps.
 
 ---
 
-### ✅ 3. Step-by-Step Animation (Interactive)
+### 3. Comparison with Frontier Overlay (grid2 and grid3 only)
 
-**Files Created:**
-- `phase1_animation.py` (NEW)
-- `phase2_animation.py` (NEW)
-- `phase3_animation.py` (NEW)
+**Files:** `grid2/grid2_compare.py`, `grid3/grid3_compare.py`
 
-**Implementation Details:**
-```python
-# Each animation script:
-1. Runs BFS and A* with return_info=True
-2. Creates side-by-side Pygame windows
-3. Visualizes exploration in real-time:
-   - Left side: BFS (light blue = explored)
-   - Right side: A* (light green = explored)
-   - Both: Cyan = final path overlaid
-4. Interactive controls:
-   - SPACE: Play/pause
-   - LEFT/RIGHT: Step backward/forward
-   - ESC: Quit
-5. Panel displays current step count
-```
+Real-time Pygame visualization showing BFS-only tiles, A*-only tiles, and shared tiles. Optional frontier overlay toggle.
 
-**Key Insight:** The most persuasive visualization for teaching:
-- Watch BFS fill a circle uniformly
-- Watch A* focus on the goal direction
-- Observe A* ignoring dead ends while BFS explores them
+**Controls:** `F` = toggle frontier overlay, `ESC` = quit.
 
-**Output:** 3 interactive Pygame applications
+> Note: `grid1` does not have a `grid1_compare.py` — at 10×10 scale the comparison adds little, but it's a structural inconsistency worth flagging.
 
 ---
 
-### ✅ 4. Metrics Overlay Scorecard
+### 4. Legacy Animation Scripts
 
-**Implementation Location:** All phase*_*.py files
+**Files:** `grid*/grid*_search_visual.py`, `grid*/grid*_astar_visual.py`
 
-**Metrics Captured:**
+Earlier interactive Pygame animations of BFS and A* exploration. Kept for reference but no longer the primary visualization path — the static PNG footprints and heatmaps are the canonical outputs.
+
+If you need step-by-step animation as a feature again, the canonical approach would be a `grid*_animation.py` script per scale; those files were created in an earlier iteration but have since been removed (only `__pycache__` traces remain).
+
+---
+
+### Metrics Overlay (applies to all visualizations)
+
+Captured per run:
+
 ```
 ┌────────────────────────────┐
 │ BFS Search Metrics         │
@@ -115,276 +101,232 @@ Successfully implemented **4 academic visualization methods** + **metrics overla
 
 **Formula:** `Efficiency = (path_length / nodes_explored) × 100`
 
-**Display Methods:**
-1. **In footprint PNG:** Right panel text box
-2. **In animation PNG:** Text overlay on window
-3. **Console output:** Printed after each run
+**Displayed via:**
+1. Right panel of footprint PNGs
+2. Console output (printed after each run)
 
-**Key Insight:** Quantifies the intuitive visual difference
-- BFS: ~5-15% efficiency (explores many wasted nodes)
-- A*: ~40-80% efficiency (targeted exploration)
+**Typical ranges:**
+- BFS: ~5–15% efficiency (explores many wasted nodes)
+- A*: ~40–80% efficiency (targeted exploration)
 
 ---
 
-## Metrics Collection Enhancement
+## Part 2 — Multi-Agent Freeze Tag Game
 
-### Modified Functions (utils.py)
+A real-time pursuit game on the large grid. **Prey** plans toward a stationary **reward**; **monster** plans toward the prey's current position. Both replan every tick.
 
-All pathfinding functions now support `return_info=True`:
+**Files (root-level):**
+- `bounded_astar_game.py` — canonical variant; both agents use depth-bounded A*
+- `astar-two-agents.py` — baseline; both agents use full A*
+- `minimax_ambush_monster.py`, `minimax_evasive_prey.py` — unreviewed variants
+
+### Implementation pattern (`bounded_astar_game.py`)
 
 ```python
-# Before:
-path = get_bfs_path(start, goal, grid)
+class BoundedAStarGame:
+    def __init__(self):
+        self.reset()
 
-# After:
+    def _update_paths(self):
+        # Prey: fixed goal (reward)
+        self.prey_path = get_bounded_astar(
+            tuple(self.prey_pos), tuple(reward_pos), GRID_LARGE,
+            depth=PREY_DEPTH
+        )
+        # Monster: dynamic goal (current prey position)
+        self.monster_path = get_bounded_astar(
+            tuple(self.monster_pos), tuple(self.prey_pos), GRID_LARGE,
+            depth=MONSTER_DEPTH
+        )
+
+    def tick(self):
+        # Each agent advances one tile along its planned path
+        # Check win/lose conditions
+        # Re-plan for next tick
+```
+
+**Tick loop:**
+1. Each agent advances one tile along its current plan.
+2. Check terminal conditions (prey at reward → prey wins; monster at prey → monster wins).
+3. Replan both paths against new positions.
+
+**Pygame loop:** throttled by `STEPS_PER_FRAME` (lower = faster simulation).
+
+**Default depth:** `PREY_DEPTH = MONSTER_DEPTH = 60` on a 30×30 grid (configurable at top of file).
+
+> **Naming history:** This file was previously `minimax_game.py` and called `get_minimax_path` from `utils.py`. Both have been renamed — the implementation has always been depth-bounded A*, never two-player minimax with alpha-beta pruning. The two `minimax_*.py` variants still bear the old name pending review.
+
+---
+
+## Algorithm Implementations (utils.py)
+
+| Function                | Algorithm                            | Heuristic    |
+|-------------------------|--------------------------------------|--------------|
+| `get_bfs_path`          | BFS with parent pointers             | None         |
+| `get_astar_path`        | A* (tuple-keyed)                     | Manhattan    |
+| `get_astar_path_fast`   | A* with integer-encoded grid indices | Manhattan    |
+| `get_bounded_astar`     | Depth-bounded A*                     | Manhattan    |
+
+### `return_info=True` contract
+
+All four pathfinders support a stats dict via `return_info=True`:
+
+```python
 path, info = get_bfs_path(start, goal, grid, return_info=True)
 # info = {
-#     'nodes_expanded': int,      # Closed set size
-#     'visited': set,             # All explored (x,y) tuples
-#     'heap_ops': int             # Heap operations (A* only)
+#     'nodes_expanded': int,   # all four
+#     'visited': set,          # explored (x, y) tuples — all four
+#     'heap_ops': int,         # A* variants only
+#     'score': float,          # depth-bounded variant only
 # }
 ```
 
-This enables all visualization scripts to:
-- Extract visited set for heatmaps
-- Count nodes explored for efficiency metrics
-- Track exploration order for animation
+This is what enables every visualization in Part 1 — the `visited` set drives heatmaps, `nodes_expanded` drives efficiency metrics, etc.
 
----
+### Shared Manhattan helper
 
-## File Structure (New & Modified)
-
-### New Visualization Scripts (12 files)
-```
-phase1_heatmaps.py       — Discovery time gradient
-phase1_animation.py      — Step-by-step interactive
-phase2_heatmaps.py       — Discovery time gradient
-phase2_animation.py      — Step-by-step interactive
-phase3_heatmaps.py       — Discovery time gradient
-phase3_animation.py      — Step-by-step interactive
-```
-
-### Modified Core Scripts (6 files)
-```
-phase1_search.py         — Added footprint PNG + metrics
-phase1_astar.py          — Added footprint PNG + metrics
-phase2_search.py         — Added footprint PNG + metrics
-phase2_astar.py          — Added footprint PNG + metrics
-phase3_search.py         — Added footprint PNG + metrics
-phase3_astar.py          — Added footprint PNG + metrics
-```
-
-### Documentation (3 new files)
-```
-VISUALIZATIONS.md        — Comprehensive guide (400+ lines)
-QUICK_START.md           — Quick reference for running scripts
-PROJECT_SUMMARY.md       — Complete feature overview
-```
+All three A* variants (`get_astar_path`, `get_astar_path_fast`, `get_bounded_astar`) compute the heuristic via the module-level `get_manhattan_distance(pos1, pos2)` function. Previously each one inlined `abs(dx) + abs(dy)` directly; the refactor routes them through the shared helper so swapping to Chebyshev or octile (e.g. when enabling diagonals via `get_neighbors(include_diagonals=True)`) is a single-function edit.
 
 ---
 
 ## Generated Outputs
 
-### PNG Files (6 footprints + 3 heatmaps = 9 static images)
+### PNG files (per full run)
 ```
-phase1_bfs_footprint.png       → 10×10 BFS comparison
-phase1_astar_footprint.png     → 10×10 A* comparison
-phase1_discovery_heatmap.png   → 10×10 discovery gradient
+grid1/grid1_bfs_footprint.png
+grid1/grid1_astar_footprint.png
+grid1/grid1_discovery_heatmap.png
 
-phase2_bfs_footprint.png       → 30×30 BFS comparison
-phase2_astar_footprint.png     → 30×30 A* comparison
-phase2_discovery_heatmap.png   → 30×30 discovery gradient
+grid2/grid2_bfs_footprint.png
+grid2/grid2_astar_footprint.png
+grid2/grid2_discovery_heatmap.png
 
-phase3_bfs_footprint.png       → 50×40 BFS comparison
-phase3_astar_footprint.png     → 50×40 A* comparison
-phase3_discovery_heatmap.png   → 50×40 discovery gradient
+grid3/grid3_bfs_footprint.png
+grid3/grid3_astar_footprint.png
+grid3/grid3_discovery_heatmap.png
 ```
 
-### Interactive Applications (3 animations)
+Plus benchmark plots in `benchmarks/`:
 ```
-phase1_animation.py            → 10×10 step-by-step (instant)
-phase2_animation.py            → 30×30 step-by-step (~15 sec)
-phase3_animation.py            → 50×40 step-by-step (~20 sec)
+benchmarks/plots_nodes.png
+benchmarks/plots_time.png
+benchmarks/results.csv
 ```
+
+### Interactive applications
+- `grid2/grid2_compare.py`, `grid3/grid3_compare.py` — frontier-overlay comparisons
+- `bounded_astar_game.py`, `astar-two-agents.py` — pursuit games
+- `env/env_setup.py` — manual-movement sandbox (Phase 0 baseline)
 
 ---
 
-## Verification Results
+## User Workflow
 
-### Syntax Checks: ✅ ALL PASSED
-```
-phase1_search.py        ✓
-phase1_astar.py         ✓
-phase1_heatmaps.py      ✓
-phase1_animation.py     ✓
-phase2_search.py        ✓
-phase2_astar.py         ✓
-phase2_heatmaps.py      ✓
-phase2_animation.py     ✓
-phase2_compare.py       ✓
-phase3_search.py        ✓
-phase3_astar.py         ✓
-phase3_heatmaps.py      ✓
-phase3_animation.py     ✓
-phase3_compare.py       ✓
-utils.py                ✓
-config.py               ✓
-────────────────────
-16 passed, 0 failed
-```
-
----
-
-## User Workflow Example
-
-### Quick 5-Minute Demo
+### Quick demo
 ```bash
-# 1. Generate footprints (instant)
-python phase1_search.py
-python phase1_astar.py
-# → Look at phase1_{bfs|astar}_footprint.png
+# Single-agent visualization (small grid, instant)
+python -m grid1.grid1_search
+python -m grid1.grid1_astar
+python -m grid1.grid1_heatmaps
 
-# 2. Watch animations (interactive)
-python phase1_animation.py
-# → Press SPACE, observe circle (BFS) vs beam (A*)
-
-# 3. View heatmaps (instant)
-python phase1_heatmaps.py
-# → Look at phase1_discovery_heatmap.png
+# Multi-agent game (interactive)
+python bounded_astar_game.py
 ```
 
-### Complete Analysis Workflow
+### Full analysis run
 ```bash
-# Phase 1 (small, instant)
-python phase1_search.py && python phase1_astar.py && python phase1_heatmaps.py
+# All three grids — visualization
+python -m grid1.grid1_search && python -m grid1.grid1_astar && python -m grid1.grid1_heatmaps
+python -m grid2.grid2_search && python -m grid2.grid2_astar && python -m grid2.grid2_heatmaps
+python -m grid3.grid3_search && python -m grid3.grid3_astar && python -m grid3.grid3_heatmaps
 
-# Phase 2 (medium, realistic)
-python phase2_search.py && python phase2_astar.py && python phase2_heatmaps.py
-python phase2_animation.py  # Interactive
+# Real-time comparisons
+python -m grid2.grid2_compare
+python -m grid3.grid3_compare
 
-# Phase 3 (large, performance-focused)
-python phase3_search.py && python phase3_astar.py && python phase3_heatmaps.py
-python phase3_animation.py  # Interactive
-
-# Benchmark across all phases
+# Benchmark harness
 python benchmarks/run_benchmarks.py
 ```
 
 ---
 
-## Key Technical Details
+## Technical Details
 
-### Color Scheme
+### Color scheme (visualizations)
 ```python
-BFS_EXPLORED    = (173, 216, 230)  # Light Blue — "calm, uniform exploration"
-ASTAR_EXPLORED  = (200, 230, 180)  # Light Green — "focused, efficient search"
-FINAL_PATH      = (255, 255, 0)    # Bright Yellow — "goal achieved"
-WALL            = (50, 50, 50)     # Dark Gray — "blocked"
-START           = (0, 255, 0)      # Green — "beginning"
-GOAL            = (255, 0, 0)      # Red — "target"
+BFS_EXPLORED    = (173, 216, 230)  # Light blue  — uniform exploration
+ASTAR_EXPLORED  = (200, 230, 180)  # Light green — focused exploration
+FINAL_PATH      = (255, 255, 0)    # Bright yellow
+WALL            = (50, 50, 50)
+START           = (0, 255, 0)
+GOAL            = (255, 0, 0)
 ```
 
-### Visualization Sizes
+### Grid sizes
 ```
-Phase 1:  10×10  = 100 nodes      (10×10 grid = ~640×640 pixels)
-Phase 2:  30×30  = 900 nodes      (30×30 grid = ~600×600 pixels)
-Phase 3:  50×40  = 2000 nodes     (50×40 grid = ~800×640 pixels)
+grid1:  10×10  =  100 nodes   (~640×640 px output)
+grid2:  30×30  =  900 nodes   (~600×600 px output)
+grid3:  50×40  = 2000 nodes   (~800×640 px output)
 ```
 
-### Matplotlib Implementation
+### Game-specific palette (`bounded_astar_game.py`)
 ```python
-# Heatmaps use viridis colormap (matplotlib standard)
-# Footprints use matplotlib.image for RGB display
-# All output: 100 DPI PNG (balance quality vs file size)
+PREY_COLOR    = (30, 144, 255)   # dodger blue
+MONSTER_COLOR = (220, 20, 60)    # crimson
+REWARD_COLOR  = (255, 215, 0)    # gold
 ```
+
+### Matplotlib output
+- Heatmaps use the viridis colormap
+- Footprints use `matplotlib.image` for RGB display
+- All PNGs at 100 DPI (balance quality vs. file size)
 
 ---
 
-## Dependencies & Requirements
+## Dependencies
 
-### Core
-- Python 3.6+
-- Pygame (for animations)
+**Required:**
+- Python 3.6+ (currently using 3.12 per `.pyc` filenames)
+- Pygame (for `*_visual.py` animations, game scripts, and `env_setup.py`)
 
-### For Full Features
-- Matplotlib (for PNG generation)
-- NumPy (used by matplotlib)
-- Pandas (for benchmarks)
+**For full features:**
+- Matplotlib + NumPy (PNG generation for footprints, heatmaps, benchmark plots)
+- Pandas (benchmark CSV analysis)
 
-### Installation
 ```bash
-pip install pygame matplotlib numpy pandas
+pip install -r requirements.txt
 ```
-
----
-
-## Academic Value
-
-### For Papers
-- **Figure 1:** Use Phase 2 footprints side-by-side
-  - Shows BFS explores ~7× more nodes
-- **Figure 2:** Use Phase 2 heatmap
-  - Shows radial vs. focused exploration patterns
-- **Figure 3:** Use metrics table
-  - Quantifies efficiency: 6.71% vs 47.83%
-
-### For Teaching
-- **Lecture Demo:** Run Phase 1 animation
-  - Demonstrates the intuitive difference instantly
-- **Lab Exercise:** Students modify heuristic, regenerate visualizations
-  - Empirical understanding of $f(n) = g(n) + h(n)$
-
-### For Research
-- **Baseline Comparison:** Use benchmarks CSV
-  - 150 trials for statistical validation
-- **Algorithm Tuning:** Modify heuristic, run heatmaps
-  - Visual feedback on exploration pattern changes
 
 ---
 
 ## Limitations & Future Work
 
-### Current Limitations
-1. **Heatmaps:** Show node count, not actual discovery time (would require step-by-step execution)
-2. **Animation:** Shows final visited set, not incremental exploration (would require state history)
-3. **No open set visualization:** Only shows closed set (explored nodes)
-4. **Manhattan distance heuristic only:** Could support multiple heuristics
+### Current limitations
+1. **Heatmaps show node count, not true discovery time.** True discovery-time visualization would require recording an exploration timeline (currently the visited set is recovered post-hoc from the closed set).
+2. **No open-set visualization.** Only the closed set (explored nodes) is rendered; the frontier (open heap contents at each step) is not.
+3. **Manhattan heuristic only.** The three A* variants all use Manhattan via `get_manhattan_distance`. Swapping is now a one-function edit, but no alternative is currently shipped.
+4. **Two variant Freeze Tag scripts (`minimax_ambush_monster.py`, `minimax_evasive_prey.py`) are unreviewed.** Both still use "minimax" in their filenames despite not importing `get_bounded_astar`; either they implement their own logic worth documenting, or they're abandoned.
 
-### Potential Enhancements
-1. Record step-by-step exploration history for true animation
-2. Implement open set visualization (frontier nodes)
-3. Add multiple heuristic options (Euclidean, Chebyshev, etc.)
-4. Create comparative metrics (nodes/step ratio, branching factor)
-5. Export GIF animations instead of interactive windows
-6. Web-based visualization (p5.js or Three.js)
+### Planned extensions
+1. **LLM-based reasoning agent.** Wrap the puzzle environment as tools (`get_state`, `make_move`, `is_goal`) and add an agent loop using the Anthropic API with function calling. Compare classical search vs. LLM planning on solution quality and step count.
+2. **Optional MCP server wrapper.** Expose the same tools as an MCP server for portability.
 
----
-
-## Summary Statistics
-
-| Metric | Count |
-|--------|-------|
-| New Python files | 6 |
-| Modified Python files | 6 |
-| New documentation files | 3 |
-| Generated PNG files (per run) | 9 |
-| Visualization types | 4 |
-| Phases implemented | 3 |
-| Metrics tracked | 4 |
-| Total lines of code added | ~1500 |
-| Syntax check results | 16/16 passed |
+### Optional polish
+- Record step-by-step exploration history for true incremental animation
+- Open-set / frontier visualization
+- Additional heuristic options (Euclidean, Chebyshev, octile)
+- Comparative metrics: nodes/step ratio, effective branching factor
+- GIF export instead of interactive windows
 
 ---
 
-## Conclusion
+## Notes for Future Maintainers
 
-Successfully implemented a **comprehensive pathfinding visualization and analysis framework** featuring:
+- **`utils.py` is the single source of truth** for all search algorithms. The visualization scripts only consume `return_info` dicts; they don't reimplement search.
+- **`config.py` exports two grid scales** (default + large). Game scripts use the large one; `env/env_setup.py` uses the default. The `grid1`/`grid2`/`grid3` directories likely embed their own grid definitions — verify before refactoring constants.
+- **Renames in progress:** `get_minimax_path` → `get_bounded_astar`, `minimax_game.py` → `bounded_astar_game.py`. The two `minimax_ambush_monster.py` / `minimax_evasive_prey.py` variants have **not** been renamed pending review of what they actually implement.
+- **`__pycache__/` directories** contain orphan `.pyc` files from deleted source (`phase*_*`, `grid*_minimax`, `minimax_comparison`, `minimax_game`). Safe to delete.
 
-1. ✅ **Search Footprints** — Static side-by-side grid comparisons with metrics
-2. ✅ **Discovery Heatmaps** — Viridis color gradients showing exploration order
-3. ✅ **Step-by-Step Animation** — Interactive Pygame explorers (play/pause/step)
-4. ✅ **Metrics Overlay** — Path length, nodes explored, time, efficiency % on all visuals
+---
 
-All 16 core scripts compile successfully (100% pass rate). The system is production-ready for academic use, teaching demonstrations, and algorithm research.
-
-**See `QUICK_START.md` for immediate usage instructions.**
+**See also:** `PROJECT_SUMMARY.md` for high-level architecture, `QUICK_START.md` for command quick-reference, `VISUALIZATIONS.md` for visualization details.

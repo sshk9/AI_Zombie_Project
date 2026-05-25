@@ -1,23 +1,24 @@
 """
-minimax_game.py - Freeze Tag with Minimax Algorithm
-=====================================================
+bounded_astar_game.py - Freeze Tag with Depth-Bounded A*
+=========================================================
 GAME RULES
 ----------
-• Prey   (blue)   uses MINIMAX to navigate toward the Reward each turn.
-• Monster(red)    uses MINIMAX to chase the Prey, recalculating every turn.
-• Reward (yellow) is stationary.
-• Game ends when:
+- Prey   (blue)   uses depth-bounded A* to navigate toward the Reward each turn.
+- Monster(red)    uses depth-bounded A* to chase the Prey, recalculating every turn.
+- Reward (yellow) is stationary.
+- Game ends when:
     ✅  Prey reaches the Reward  -> "PREY WINS!"
     ❌  Monster catches the Prey -> "MONSTER WINS!"
 
 HOW THE TWO AGENTS WORK
 -----------------------
-Both agents run MINIMAX (game-tree search with alpha-beta pruning) every step:
-  - Prey    : MINIMAX( prey_pos  -> reward_pos )   — fixed goal
-  - Monster : MINIMAX( monster_pos -> prey_pos  )  — goal changes every step
+Both agents run depth-bounded A* every step:
+  - Prey    : A* ( prey_pos    -> reward_pos )   — fixed goal
+  - Monster : A* ( monster_pos -> prey_pos    )  — goal changes every step
 
-Each game-tick both agents advance ONE tile along their minimax-computed path.
-If either minimax path is empty the agent stays put (already at goal / blocked).
+Each game-tick both agents advance ONE tile along their planned path.
+If a planned path is empty (goal unreachable within the depth bound)
+the agent stays put.
 
 INTEGRATION
 -----------
@@ -25,7 +26,7 @@ Drops into the existing AI_Zombie_Project folder.
 Requires: config.py  and  utils.py  in the parent directory.
 
 Run:
-    python minimax_game.py
+    python bounded_astar_game.py
 """
 
 import pygame
@@ -48,7 +49,7 @@ from config import (
     PLAYER_START_POS_LARGE, # [col, row] start for the prey
     GOAL_POS_LARGE,         # [col, row] for the reward
 )
-from utils import get_minimax_path
+from utils import get_bounded_astar
 
 # ==============================================================================
 #  GAME-SPECIFIC COLOURS  (override / extend the project palette here)
@@ -77,7 +78,7 @@ monster_start = [GRID_WIDTH_LARGE - 2, GRID_HEIGHT_LARGE - 2]
 reward_pos   = list(GOAL_POS_LARGE)
 
 # ==============================================================================
-#  MINIMAX DEPTH PARAMETERS
+#  SEARCH DEPTH PARAMETERS
 # ==============================================================================
 # Lower depth = faster but shallower search. Higher depth = finds better paths.
 # For 30x30 grid, needs ~55+ steps to cross, so depth must be at least 50+
@@ -183,10 +184,10 @@ def draw_panel(surface, width, step, prey_dist, monster_dist, result=None):
     dot_r = 6
     # Prey
     pygame.draw.circle(surface, PREY_COLOR, (14, 40), dot_r)
-    surface.blit(font_med.render("Prey (MINIMAX -> reward)", True, PREY_COLOR), (24, 32))
+    surface.blit(font_med.render("Prey (A* -> reward)", True, PREY_COLOR), (24, 32))
     # Monster
     pygame.draw.circle(surface, MONSTER_COLOR, (width // 2 - 80, 40), dot_r)
-    surface.blit(font_med.render("Monster (MINIMAX -> prey)", True, MONSTER_COLOR),
+    surface.blit(font_med.render("Monster (A* -> prey)", True, MONSTER_COLOR),
                  (width // 2 - 70, 32))
     # Reward diamond
     rdx = width - 110
@@ -202,7 +203,7 @@ def draw_panel(surface, width, step, prey_dist, monster_dist, result=None):
 # ==============================================================================
 #  GAME STATE
 # ==============================================================================
-class MiniMaxGame:
+class BoundedAStarGame:
     """Encapsulates all mutable state so we can easily restart (R key)."""
 
     def __init__(self):
@@ -222,15 +223,15 @@ class MiniMaxGame:
 
     # -- path planning --
     def _update_paths(self):
-        """Re-run MINIMAX for both agents."""
+        """Re-plan both agents with depth-bounded A*."""
         # Prey heads for the reward (fixed goal)
-        self.prey_path = get_minimax_path(
+        self.prey_path = get_bounded_astar(
             tuple(self.prey_pos), tuple(reward_pos), GRID_LARGE,
             depth=PREY_DEPTH
         )
 
         # Monster heads for prey's CURRENT position (dynamic goal)
-        self.monster_path = get_minimax_path(
+        self.monster_path = get_bounded_astar(
             tuple(self.monster_pos), tuple(self.prey_pos), GRID_LARGE,
             depth=MONSTER_DEPTH
         )
@@ -288,10 +289,10 @@ def main():
     W = GRID_WIDTH_LARGE  * TILE_SIZE_LARGE
     H = GRID_HEIGHT_LARGE * TILE_SIZE_LARGE + PANEL_HEIGHT
     screen = pygame.display.set_mode((W, H))
-    pygame.display.set_caption("Freeze Tag  |  Prey (MINIMAX) vs Monster (MINIMAX)")
+    pygame.display.set_caption("Freeze Tag  |  Prey (A*) vs Monster (A*)")
     clock  = pygame.time.Clock()
 
-    game         = MiniMaxGame()
+    game         = BoundedAStarGame()
     frame_count  = 0
     end_display  = None    # timestamp when game ended (for auto-close)
 
