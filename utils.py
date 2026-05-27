@@ -193,7 +193,7 @@ def get_astar_path(start, goal, grid=None, return_info=False):
                     continue
                 g_score[neighbor] = tentative_g
                 came_from[neighbor] = current
-                h = get_get_get_manhattan_distance(neighbor, goal_t)
+                h = get_manhattan_distance(neighbor, goal_t)
                 f_neighbor = tentative_g + h
                 counter += 1
                 heapq.heappush(open_heap, (f_neighbor, counter, neighbor))
