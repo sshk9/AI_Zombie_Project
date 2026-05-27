@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "grid": {
+      "command": "C:\\Users\\User\\AI_Zombie_Project\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\Users\\User\\AI_Zombie_Project\\grid_mcp_server.py"]
+    }
+  }
+}
